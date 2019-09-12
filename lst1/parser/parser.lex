@@ -10,6 +10,7 @@ int linenum = 1;
 void lexunput(char c);
 void readcomment();
 %}
+
 %%
 [ \t]+                          {;}
 \n                              {linenum++;}
@@ -18,7 +19,7 @@ void readcomment();
 "<-"                            {return(ASSIGN);}
 Class                           {return(lexsave(CLASS));}
 self                            {yylval.p = selfvar;  return(PSEUDO);}
-selfProcess			{yylval.p = procvar;  return(PSEUDO);}
+selfProcess                     {yylval.p = procvar;  return(PSEUDO);}
 super                           {yylval.p = supervar; return(PSEUDO);}
 nil                             {yylval.p = nilvar;   return(PSEUDO);}
 true                            {yylval.p = truevar;  return(PSEUDO);}
@@ -26,12 +27,14 @@ false                           {yylval.p = falsevar; return(PSEUDO);}
 smalltalk                       {yylval.p = smallvar; return(PSEUDO);}
 \$.                             {yylval.i = yytext[1]; return(LITCHAR);}
 #                               {return(PS);}
-[0-9]+r-?[0-9A-Z]+(\.[0-9A-Z]+)?(e[-+]?[0-9]+)? {return(lexsave(LITFNUM));}
+[0-9]+r-?[0-9A-Z]+(\.[0-9A-Z]+)?(e[-+]?[0-9]+)? {
+    return(lexsave(LITFNUM));
+}
 [0-9]+                          {yylval.i = atoi(yytext); return(LITNUM);}
-[0-9]+(\.[0-9]+)?(e[-+]?[0-9]+)?   {return(lexsave(LITFNUM));}
-'[^']*'                         {char c; lexunput(c = lexinput());
-                                 if (c == '\'') yymore();
-                                 else return(lexlstr());}
+[0-9]+(\.[0-9]+)?(e[-+]?[0-9]+)?   {
+    return(lexsave(LITFNUM));
+}
+'[^']*'                         {char c; lexunput(c = lexinput()); if (c == '\'') yymore(); else return(lexlstr());}
 [a-zA-Z0-9]+:?                  {return(varlex());}
 :[a-zA-Z0-9]+                   {return(slexsave(COLONVAR));}
 #[^ \t\n.()\[]+                 {return(slexsave(LITSYM));}
@@ -41,26 +44,28 @@ smalltalk                       {yylval.p = smallvar; return(PSEUDO);}
 "["                             {return(LB);}
 "]"                             {return(RB);}
 "."                             {return(PERIOD);}
-^"|"				{return(lexsave(MBAR));}
-^"!"				{return(lexsave(MBAR));}
+^"|"                            {return(lexsave(MBAR));}
+^"!"                            {return(lexsave(MBAR));}
 "|"                             {return(lexsave(BAR));}
 "!"                             {return(lexsave(BAR));}
 ";"                             {return(SEMI);}
 "^"                             {return(lexsave(UPARROW));}
-">"				{return(lexsave(PE));}
+">"                             {return(lexsave(PE));}
 [^ \t\nA-Za-z0-9]               {return(lexsave(BINARY));}
-"<primitive"   			{return(PRIMITIVE);}
-"<"[a-zA-Z0-9]+			{yylval.i = prim_number(&yytext[1]); return(NAMEDPRIM);}
+"<primitive"                    {return(PRIMITIVE);}
+"<"[a-zA-Z0-9]+                 {yylval.i = prim_number(&yytext[1]); return(NAMEDPRIM);}
+
 %%
+
 static int ocbuf = 0;
 static int pbbuf[400];
 
 int lexinput()
-{	
+{
     int c;
 
     if (ocbuf) {
-        c = pbbuf[--ocbuf]; 
+        c = pbbuf[--ocbuf];
     } else {
         c = getc(fp);
         if (c == EOF) c = 0;
@@ -76,7 +81,7 @@ void lexunput(char c)
 #include <ctype.h>
 
 void readcomment()
-{  
+{
     char c;
 
     while ((c = lexinput()) && c != '\"')
@@ -85,7 +90,7 @@ void readcomment()
 }
 
 char *walloc(char *s) 
-{  
+{
     char *p;
 
     p = malloc((unsigned) (strlen(s) + 1));
@@ -109,7 +114,7 @@ int lexsave(int type)
 }
 
 int varlex()
-{  
+{
     lexsave(0);
     if (yytext[yyleng-1] == ':') return(KEYWORD);
     else if (islower(yytext[0])) return(LOWERCASEVAR);
@@ -117,7 +122,7 @@ int varlex()
 }
 
 int lexlstr()
-{  
+{
     char *p, *q;
 
     yylval.c = p = walloc(&yytext[1]);
@@ -126,7 +131,7 @@ int lexlstr()
 }
 
 int prim_number(char *name)
-{	
+{
     struct prim_names *p;
 
     for (p = prim_table; *(p->p_name); p++) {
