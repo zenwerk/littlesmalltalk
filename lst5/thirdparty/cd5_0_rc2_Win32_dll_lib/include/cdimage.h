@@ -8,10 +8,11 @@
 #define __CD_IMAGE_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-cdContext* cdContextImage(void);
+  cdContext* cdContextImage(void);
 
 #define CD_IMAGE cdContextImage()
 
@@ -20,4 +21,3 @@ cdContext* cdContextImage(void);
 #endif
 
 #endif /* ifndef __CD_IMAGE_ */
-

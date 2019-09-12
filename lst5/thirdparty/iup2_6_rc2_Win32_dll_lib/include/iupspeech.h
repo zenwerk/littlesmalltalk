@@ -8,16 +8,16 @@
 #define __IUPSPEECH_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-int IupSpeechOpen(void);
-void IupSpeechClose(void);
-Ihandle *IupSpeech(void);
+  int IupSpeechOpen(void);
+  void IupSpeechClose(void);
+  Ihandle *IupSpeech(void);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-

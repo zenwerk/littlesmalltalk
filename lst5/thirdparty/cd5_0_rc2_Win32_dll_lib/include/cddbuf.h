@@ -8,10 +8,11 @@
 #define __CD_DBUF_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-cdContext* cdContextDBuffer(void);
+  cdContext* cdContextDBuffer(void);
 
 #define CD_DBUFFER cdContextDBuffer()
 
@@ -20,4 +21,3 @@ cdContext* cdContextDBuffer(void);
 #endif
 
 #endif /* ifndef __CD_DBUF_ */
-

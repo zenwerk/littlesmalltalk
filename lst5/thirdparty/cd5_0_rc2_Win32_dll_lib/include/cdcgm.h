@@ -8,10 +8,11 @@
 #define __CD_CGM_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-cdContext* cdContextCGM(void);
+  cdContext* cdContextCGM(void);
 #define CD_CGM cdContextCGM()
 
 #define CD_CGMCOUNTERCB 1
@@ -30,5 +31,3 @@ cdContext* cdContextCGM(void);
 #endif
 
 #endif /* ifndef __CD_CGM_ */
-
-

@@ -3,15 +3,16 @@
  *
  * See Copyright Notice in iup.h
  */
- 
-#ifndef __IUPSBOX_H 
-#define __IUPSBOX_H 
+
+#ifndef __IUPSBOX_H
+#define __IUPSBOX_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-Ihandle* IupSbox(Ihandle *child);
+  Ihandle* IupSbox(Ihandle* child);
 
 #ifdef __cplusplus
 }

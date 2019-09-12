@@ -8,10 +8,11 @@
 #define __CD_DXF_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-cdContext* cdContextDXF(void);
+  cdContext* cdContextDXF(void);
 
 #define CD_DXF cdContextDXF()
 

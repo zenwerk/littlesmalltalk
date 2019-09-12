@@ -8,10 +8,11 @@
 #define __CD_DGN_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-cdContext* cdContextDGN(void);
+  cdContext* cdContextDGN(void);
 
 #define CD_DGN cdContextDGN()
 
@@ -20,4 +21,3 @@ cdContext* cdContextDGN(void);
 #endif
 
 #endif /* ifndef __CD_DGN_ */
-

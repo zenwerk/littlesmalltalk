@@ -3,15 +3,16 @@
  *
  * See Copyright Notice in iup.h
  */
- 
-#ifndef __IUPCB_H 
+
+#ifndef __IUPCB_H
 #define __IUPCB_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-Ihandle *IupColorBrowser(void);
+  Ihandle *IupColorBrowser(void);
 
 #define IUP_RGB "RGB"
 #define IUP_CHANGE_CB "CHANGE_CB"
@@ -22,4 +23,3 @@ Ihandle *IupColorBrowser(void);
 #endif
 
 #endif
-

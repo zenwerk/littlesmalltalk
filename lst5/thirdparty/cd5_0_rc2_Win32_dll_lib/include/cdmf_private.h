@@ -8,25 +8,24 @@
 #define __CDMF_PRIVATE_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/* public part of the internal cdCtxCanvas */
-typedef struct cdCanvasMF 
-{
-  cdCanvas* canvas;
-  char* filename;       
-  void* data;           
-} cdCanvasMF;
+  /* public part of the internal cdCtxCanvas */
+  typedef struct cdCanvasMF
+  {
+    cdCanvas* canvas;
+    char* filename;
+    void* data;
+  } cdCanvasMF;
 
-void cdcreatecanvasMF(cdCanvas *canvas, void *data);
-void cdinittableMF(cdCanvas* canvas);
-void cdkillcanvasMF(cdCanvasMF *mfcanvas);
+  void cdcreatecanvasMF(cdCanvas* canvas, void* data);
+  void cdinittableMF(cdCanvas* canvas);
+  void cdkillcanvasMF(cdCanvasMF* mfcanvas);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif 
-
-
+#endif

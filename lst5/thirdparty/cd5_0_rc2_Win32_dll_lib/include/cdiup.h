@@ -8,10 +8,11 @@
 #define __CD_IUP_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-cdContext* cdContextIup(void);
+  cdContext* cdContextIup(void);
 
 #define CD_IUP cdContextIup()
 

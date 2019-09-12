@@ -8,10 +8,11 @@
 #define __CD_PRINTER_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-cdContext* cdContextPrinter(void);
+  cdContext* cdContextPrinter(void);
 
 #define CD_PRINTER cdContextPrinter()
 
@@ -20,4 +21,3 @@ cdContext* cdContextPrinter(void);
 #endif
 
 #endif /* ifndef __CD_PRINTER_ */
-

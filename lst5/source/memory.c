@@ -5,107 +5,101 @@
  *
  * ---------------------------------------------------------------
  * Little Smalltalk, Version 5
- * 
+ *
  * Copyright (C) 1987-2005 by Timothy A. Budd
  * Copyright (C) 2007 by Charles R. Childers
  * Copyright (C) 2005-2007 by Danny Reinhold
- * 
+ *
  * ============================================================================
- * This license applies to the virtual machine and to the initial image of 
- * the Little Smalltalk system and to all files in the Little Smalltalk 
+ * This license applies to the virtual machine and to the initial image of
+ * the Little Smalltalk system and to all files in the Little Smalltalk
  * packages.
  * ============================================================================
- * Permission is hereby granted, free of charge, to any person obtaining a copy 
- * of this software and associated documentation files (the "Software"), to deal 
- * in the Software without restriction, including without limitation the rights 
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
- * copies of the Software, and to permit persons to whom the Software is 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in 
+ *
+ * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
 
 /*
-	Uses baker two-space garbage collection algorithm
+    Uses baker two-space garbage collection algorithm
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "memory.h"
 #include "globs.h"
 #include "interp.h"
+#include "memory.h"
 
-extern int      debugging;      /* true if we are debugging */
-
-/*
-	static memory space -- never recovered
-*/
-static struct object *staticBase,
-               *staticTop,
-               *staticPointer;
+extern int debugging; /* true if we are debugging */
 
 /*
-	dynamic (managed) memory space
-	recovered using garbage collection
+    static memory space -- never recovered
 */
-
-static struct object *spaceOne,
-               *spaceTwo;
-static int      spaceSize;
-
-struct object  *memoryBase,
-               *memoryPointer,
-               *memoryTop;
-
-static int      inSpaceOne;
-static struct object *oldBase,
-               *oldTop;
+static struct object *staticBase, *staticTop, *staticPointer;
 
 /*
-	roots for memory access
-	used as bases for garbage collection algorithm
+    dynamic (managed) memory space
+    recovered using garbage collection
 */
-struct object  *rootStack[ROOTSTACKLIMIT];
-LstUInt         rootTop = 0;
+
+static struct object *spaceOne, *spaceTwo;
+static int spaceSize;
+
+struct object *memoryBase, *memoryPointer, *memoryTop;
+
+static int inSpaceOne;
+static struct object *oldBase, *oldTop;
+
+/*
+    roots for memory access
+    used as bases for garbage collection algorithm
+*/
+struct object *rootStack[ROOTSTACKLIMIT];
+LstUInt rootTop = 0;
 
 #define STATICROOTLIMIT (500)
 static struct object **staticRoots[STATICROOTLIMIT];
-static LstUInt  staticRootTop = 0;
+static LstUInt staticRootTop = 0;
 
 /*
-	test routine to see if a pointer is in dynamic memory
-	area or not
+    test routine to see if a pointer is in dynamic memory
+    area or not
 */
 
 int isDynamicMemory(struct object *x)
 {
   return ((x >= spaceOne) && (x <= (spaceOne + spaceSize))) ||
-    ((x >= spaceTwo) && (x <= (spaceTwo + spaceSize)));
+         ((x >= spaceTwo) && (x <= (spaceTwo + spaceSize)));
 }
 
 /*
-	gcinit -- initialize the memory management system
+    gcinit -- initialize the memory management system
 */
 void gcinit(int staticsz, int dynamicsz)
 {
   /*
-     allocate the memory areas 
+     allocate the memory areas
    */
-  staticBase = (struct object *) malloc(staticsz * sizeof(struct object));
-  spaceOne = (struct object *) malloc(dynamicsz * sizeof(struct object));
-  spaceTwo = (struct object *) malloc(dynamicsz * sizeof(struct object));
-  if((staticBase == 0) || (spaceOne == 0) || (spaceTwo == 0))
+  staticBase = (struct object *)malloc(staticsz * sizeof(struct object));
+  spaceOne = (struct object *)malloc(dynamicsz * sizeof(struct object));
+  spaceTwo = (struct object *)malloc(dynamicsz * sizeof(struct object));
+  if ((staticBase == 0) || (spaceOne == 0) || (spaceTwo == 0))
     sysError("not enough memory for space allocations\n", 0);
 
   staticTop = staticBase + staticsz;
@@ -114,37 +108,35 @@ void gcinit(int staticsz, int dynamicsz)
   spaceSize = dynamicsz;
   memoryBase = spaceOne;
   memoryPointer = memoryBase + spaceSize;
-  if(debugging)
+  if (debugging)
   {
-    printf("space one 0x%p, top 0x%p,"
-           " space two 0x%p , top 0x%p\n",
-           spaceOne, (spaceOne + spaceSize),
-           spaceTwo, (spaceTwo + spaceSize));
+    printf(
+      "space one 0x%p, top 0x%p,"
+      " space two 0x%p , top 0x%p\n",
+      spaceOne, (spaceOne + spaceSize), spaceTwo, (spaceTwo + spaceSize));
   }
   inSpaceOne = 1;
 }
 
 /*
-	gc_move is the heart of the garbage collection algorithm.
-	It takes as argument a pointer to a value in the old space,
-	and moves it, and everything it points to, into the new space
-	The returned value is the address in the new space.
+    gc_move is the heart of the garbage collection algorithm.
+    It takes as argument a pointer to a value in the old space,
+    and moves it, and everything it points to, into the new space
+    The returned value is the address in the new space.
 */
 struct mobject
 {
-  LstUInt         size;
+  LstUInt size;
   struct mobject *data[0];
 };
 
 static struct object *gc_move(struct mobject *ptr)
 {
-  struct mobject *old_address = ptr,
-    *previous_object = 0,
-    *new_address = 0,
-    *replacement = 0;
-  int             sz;
+  struct mobject *old_address = ptr, *previous_object = 0, *new_address = 0,
+                 *replacement = 0;
+  int sz;
 
-  while(1)
+  while (1)
   {
 
     /*
@@ -152,14 +144,14 @@ static struct object *gc_move(struct mobject *ptr)
      * keep stacking objects to be moved until we find
      * one that we can handle
      */
-    for(;;)
+    for (;;)
     {
       /*
        * SmallInt's are not proper memory pointers,
        * so catch them first.  Their "object pointer"
        * value can be used as-is in the new space.
        */
-      if(IS_SMALLINT(old_address))
+      if (IS_SMALLINT(old_address))
       {
         replacement = old_address;
         old_address = previous_object;
@@ -171,31 +163,29 @@ static struct object *gc_move(struct mobject *ptr)
          * something is very wrong
          */
       }
-      else if((old_address >=
-               (struct mobject *) memoryBase)
-              && (old_address <= (struct mobject *) memoryTop))
+      else if ((old_address >= (struct mobject *)memoryBase) &&
+               (old_address <= (struct mobject *)memoryTop))
       {
-        sysError("GC invariant failure -- address in new space",
-                 old_address);
+        sysError("GC invariant failure -- address in new space", old_address);
 
         /*
-           else see if not  in old space 
+           else see if not  in old space
          */
       }
-      else if((old_address < (struct mobject *) oldBase) ||
-              (old_address > (struct mobject *) oldTop))
+      else if ((old_address < (struct mobject *)oldBase) ||
+               (old_address > (struct mobject *)oldTop))
       {
         replacement = old_address;
         old_address = previous_object;
         break;
 
         /*
-           else see if already forwarded 
+           else see if already forwarded
          */
       }
-      else if(old_address->size & FLAG_GCDONE)
+      else if (old_address->size & FLAG_GCDONE)
       {
-        if(old_address->size & FLAG_BIN)
+        if (old_address->size & FLAG_BIN)
         {
           replacement = old_address->data[0];
         }
@@ -208,20 +198,20 @@ static struct object *gc_move(struct mobject *ptr)
         break;
 
         /*
-           else see if binary object 
+           else see if binary object
          */
       }
-      else if(old_address->size & FLAG_BIN)
+      else if (old_address->size & FLAG_BIN)
       {
-        int             isz;
+        int isz;
 
         isz = SIZE(old_address);
         sz = (isz + BytesPerWord - 1) / BytesPerWord;
         memoryPointer = WORDSDOWN(memoryPointer, sz + 2);
-        new_address = (struct mobject *) memoryPointer;
+        new_address = (struct mobject *)memoryPointer;
         SETSIZE(new_address, isz);
         new_address->size |= FLAG_BIN;
-        while(sz)
+        while (sz)
         {
           new_address->data[sz] = old_address->data[sz];
           sz--;
@@ -232,18 +222,18 @@ static struct object *gc_move(struct mobject *ptr)
         old_address = old_address->data[0];
         previous_object->data[0] = new_address;
         /*
-           now go chase down class pointer 
+           now go chase down class pointer
          */
 
         /*
-           must be non-binary object 
+           must be non-binary object
          */
       }
       else
       {
         sz = SIZE(old_address);
         memoryPointer = WORDSDOWN(memoryPointer, sz + 2);
-        new_address = (struct mobject *) memoryPointer;
+        new_address = (struct mobject *)memoryPointer;
         SETSIZE(new_address, sz);
         old_address->size |= FLAG_GCDONE;
         new_address->data[sz] = previous_object;
@@ -261,24 +251,24 @@ static struct object *gc_move(struct mobject *ptr)
      * which holds a pointer that is now to be replaced.
      * the value in replacement is the new value
      */
-    for(;;)
+    for (;;)
     {
       /*
-         backed out entirely 
+         backed out entirely
        */
-      if(old_address == 0)
+      if (old_address == 0)
       {
-        return (struct object *) replacement;
+        return (struct object *)replacement;
       }
 
       /*
-         case 1, binary or last value 
+         case 1, binary or last value
        */
-      if((old_address->size & FLAG_BIN) || (SIZE(old_address) == 0))
+      if ((old_address->size & FLAG_BIN) || (SIZE(old_address) == 0))
       {
 
         /*
-           fix up class pointer 
+           fix up class pointer
          */
         new_address = old_address->data[0];
         previous_object = new_address->data[0];
@@ -298,7 +288,7 @@ static struct object *gc_move(struct mobject *ptr)
         /*
          * quick cheat for recovering zero fields
          */
-        while(sz && (old_address->data[sz] == 0))
+        while (sz && (old_address->data[sz] == 0))
         {
           new_address->data[sz--] = 0;
         }
@@ -309,26 +299,26 @@ static struct object *gc_move(struct mobject *ptr)
         previous_object = old_address;
         old_address = old_address->data[sz];
         previous_object->data[sz] = new_address;
-        break;                  /* go track down this value */
+        break; /* go track down this value */
       }
     }
   }
 }
 
 /*
-	gcollect -- garbage collection entry point
+    gcollect -- garbage collection entry point
 */
-extern int      gccount;
-struct object  *gcollect(int sz)
+extern int gccount;
+struct object *gcollect(int sz)
 {
-  LstUInt       i;
+  LstUInt i;
 
   gccount++;
 
   /*
-     first change spaces 
+     first change spaces
    */
-  if(inSpaceOne)
+  if (inSpaceOne)
   {
     memoryBase = spaceTwo;
     inSpaceOne = 0;
@@ -344,40 +334,41 @@ struct object  *gcollect(int sz)
   oldTop = oldBase + spaceSize;
 
   /*
-     then do the collection 
+     then do the collection
    */
-  for(i = 0; i < rootTop; i++)
+  for (i = 0; i < rootTop; i++)
   {
-    rootStack[i] = gc_move((struct mobject *) rootStack[i]);
+    rootStack[i] = gc_move((struct mobject *)rootStack[i]);
   }
-  for(i = 0; i < staticRootTop; i++)
+  for (i = 0; i < staticRootTop; i++)
   {
-    (*staticRoots[i]) = gc_move((struct mobject *) *staticRoots[i]);
+    (*staticRoots[i]) = gc_move((struct mobject *)*staticRoots[i]);
   }
 
   flushCache();
 
   /*
-     then see if there is room for allocation 
+     then see if there is room for allocation
    */
   memoryPointer = WORDSDOWN(memoryPointer, sz + 2);
-  if(memoryPointer < memoryBase)
+  if (memoryPointer < memoryBase)
   {
-	  sysError("insufficient memory after garbage collection", (void *)(INT_PTR)sz);
+    sysError("insufficient memory after garbage collection",
+             (void *)(INT_PTR)sz);
   }
   SETSIZE(memoryPointer, sz);
   return (memoryPointer);
 }
 
 /*
-	static allocation -- tries to allocate values in an area
-	that will not be subject to garbage collection
+    static allocation -- tries to allocate values in an area
+    that will not be subject to garbage collection
 */
 
-struct object  *staticAllocate(int sz)
+struct object *staticAllocate(int sz)
 {
   staticPointer = WORDSDOWN(staticPointer, sz + 2);
-  if(staticPointer < staticBase)
+  if (staticPointer < staticBase)
   {
     sysError("insufficient static memory", 0);
   }
@@ -385,10 +376,10 @@ struct object  *staticAllocate(int sz)
   return (staticPointer);
 }
 
-struct object  *staticIAllocate(int sz)
+struct object *staticIAllocate(int sz)
 {
-  int             trueSize;
-  struct object  *result;
+  int trueSize;
+  struct object *result;
 
   trueSize = (sz + BytesPerWord - 1) / BytesPerWord;
   result = staticAllocate(trueSize);
@@ -398,15 +389,15 @@ struct object  *staticIAllocate(int sz)
 }
 
 /*
-	if definition is not in-lined, here  is what it should be
+    if definition is not in-lined, here  is what it should be
 */
 #ifndef gcalloc
-struct object  *gcalloc(int sz)
+struct object *gcalloc(int sz)
 {
-  struct object  *result;
+  struct object *result;
 
   memoryPointer = WORDSDOWN(memoryPointer, sz + 2);
-  if(memoryPointer < memoryBase)
+  if (memoryPointer < memoryBase)
   {
     return gcollect(sz);
   }
@@ -415,10 +406,10 @@ struct object  *gcalloc(int sz)
 }
 #endif
 
-struct object  *gcialloc(int sz)
+struct object *gcialloc(int sz)
 {
-  int             trueSize;
-  struct object  *result;
+  int trueSize;
+  struct object *result;
 
   trueSize = (sz + BytesPerWord - 1) / BytesPerWord;
   result = gcalloc(trueSize);
@@ -428,19 +419,19 @@ struct object  *gcialloc(int sz)
 }
 
 /*
-	File in and file out of Smalltalk images
+    File in and file out of Smalltalk images
 */
 
-static int      indirtop = 0;
+static int indirtop = 0;
 static struct object **indirArray;
 
-static unsigned int readWord(FILE * fp)
+static unsigned int readWord(FILE *fp)
 {
-  int             i;
-  unsigned int    value;
+  int i;
+  unsigned int value;
 
   i = fgetc(fp);
-  if(i == EOF)
+  if (i == EOF)
   {
     sysError("unexpected end of file reading image file", 0);
   }
@@ -449,45 +440,43 @@ static unsigned int readWord(FILE * fp)
   return value;
 }
 
-static struct object *objectRead(FILE * fp)
+static struct object *objectRead(FILE *fp)
 {
-  int             type,
-                  size,
-                  i;
-  struct object  *newObj = 0;
+  int type, size, i;
+  struct object *newObj = 0;
   struct byteObject *bnewObj;
 
   type = readWord(fp);
 
   switch (type)
   {
-    case 0:                    /* nil obj */
+    case 0: /* nil obj */
       sysError("read in a null object", 0);
 
-    case 1:                    /* ordinary object */
+    case 1: /* ordinary object */
       size = readWord(fp);
       newObj = staticAllocate(size);
       indirArray[indirtop++] = newObj;
       newObj->class = objectRead(fp);
-      for(i = 0; i < size; i++)
+      for (i = 0; i < size; i++)
         newObj->data[i] = objectRead(fp);
       break;
 
-    case 2:                    /* integer */
+    case 2: /* integer */
     {
-      int             val;
+      int val;
 
-      (void) fread(&val, sizeof(val), 1, fp);
+      (void)fread(&val, sizeof(val), 1, fp);
       newObj = newInteger(NTOHS(val));
     }
-      break;
+    break;
 
-    case 3:                    /* byte arrays */
+    case 3: /* byte arrays */
       size = readWord(fp);
       newObj = staticIAllocate(size);
       indirArray[indirtop++] = newObj;
-      bnewObj = (struct byteObject *) newObj;
-      for(i = 0; i < size; i++)
+      bnewObj = (struct byteObject *)newObj;
+      for (i = 0; i < size; i++)
       {
         type = readWord(fp);
         bnewObj->bytes[i] = type;
@@ -495,69 +484,69 @@ static struct object *objectRead(FILE * fp)
       bnewObj->class = objectRead(fp);
       break;
 
-    case 4:                    /* previous object */
+    case 4: /* previous object */
       size = readWord(fp);
       newObj = indirArray[size];
       break;
 
-    case 5:                    /* object 0 (nil object) */
+    case 5: /* object 0 (nil object) */
       newObj = indirArray[0];
       break;
   }
   return newObj;
 }
 
-int fileIn(FILE * fp)
+int fileIn(FILE *fp)
 {
-  int             i;
+  int i;
 
   /*
-     use the currently unused space for the indir pointers 
+     use the currently unused space for the indir pointers
    */
-  if(inSpaceOne)
+  if (inSpaceOne)
   {
-    indirArray = (struct object * *) spaceTwo;
+    indirArray = (struct object **)spaceTwo;
   }
   else
   {
-    indirArray = (struct object * *) spaceOne;
+    indirArray = (struct object **)spaceOne;
   }
   indirtop = 0;
 
   /*
-     read in the method from the image file 
+     read in the method from the image file
    */
-  nilObject     = objectRead(fp);
-  trueObject    = objectRead(fp);
-  falseObject   = objectRead(fp);
+  nilObject = objectRead(fp);
+  trueObject = objectRead(fp);
+  falseObject = objectRead(fp);
   globalsObject = objectRead(fp);
   SmallIntClass = objectRead(fp);
-  IntegerClass  = objectRead(fp);
-  ArrayClass    = objectRead(fp);
-  BlockClass    = objectRead(fp);
-  ContextClass  = objectRead(fp);
-  StringClass   = objectRead(fp);
+  IntegerClass = objectRead(fp);
+  ArrayClass = objectRead(fp);
+  BlockClass = objectRead(fp);
+  ContextClass = objectRead(fp);
+  StringClass = objectRead(fp);
   initialMethod = objectRead(fp);
-  for(i = 0; i < 3; i++)
+  for (i = 0; i < 3; i++)
   {
     binaryMessages[i] = objectRead(fp);
   }
   badMethodSym = objectRead(fp);
 
   /*
-     clean up after ourselves 
+     clean up after ourselves
    */
-  memoryClear((char *) indirArray, spaceSize * sizeof(struct object));
+  memoryClear((char *)indirArray, spaceSize * sizeof(struct object));
   return indirtop;
 }
 
-static void writeWord(FILE * fp, int i)
+static void writeWord(FILE *fp, int i)
 {
-  if(i < 0)
+  if (i < 0)
   {
-	  sysError("trying to write out negative value", (void *)(INT_PTR)i);
+    sysError("trying to write out negative value", (void *)(INT_PTR)i);
   }
-  if(i >= 255)
+  if (i >= 255)
   {
     fputc(255, fp);
     writeWord(fp, i - 255);
@@ -568,34 +557,33 @@ static void writeWord(FILE * fp, int i)
   }
 }
 
-static void objectWrite(FILE * fp, struct object *obj)
+static void objectWrite(FILE *fp, struct object *obj)
 {
-  int             i,
-                  size;
+  int i, size;
 
-  if(obj == 0)
+  if (obj == 0)
   {
     sysError("writing out a null object", 0);
   }
 
-  if(IS_SMALLINT(obj))
-  {                             /* SmallInt */
-    int             val;
+  if (IS_SMALLINT(obj))
+  { /* SmallInt */
+    int val;
 
     writeWord(fp, 2);
     val = HTONL(integerValue(obj));
-    (void) fwrite(&val, sizeof(val), 1, fp);
+    (void)fwrite(&val, sizeof(val), 1, fp);
     return;
   }
 
   /*
-     see if already written 
+     see if already written
    */
-  for(i = 0; i < indirtop; i++)
+  for (i = 0; i < indirtop; i++)
   {
-    if(obj == indirArray[i])
+    if (obj == indirArray[i])
     {
-      if(i == 0)
+      if (i == 0)
       {
         writeWord(fp, 5);
       }
@@ -609,58 +597,58 @@ static void objectWrite(FILE * fp, struct object *obj)
   }
 
   /*
-     not written, do it now 
+     not written, do it now
    */
   indirArray[indirtop++] = obj;
 
   /*
-     byte objects 
+     byte objects
    */
-  if(obj->size & FLAG_BIN)
+  if (obj->size & FLAG_BIN)
   {
-    struct byteObject *bobj = (struct byteObject *) obj;
+    struct byteObject *bobj = (struct byteObject *)obj;
 
     size = SIZE(obj);
     writeWord(fp, 3);
     writeWord(fp, size);
-    for(i = 0; i < size; i++)
+    for (i = 0; i < size; i++)
       writeWord(fp, bobj->bytes[i]);
     objectWrite(fp, obj->class);
     return;
   }
 
   /*
-     ordinary objects 
+     ordinary objects
    */
   size = SIZE(obj);
   writeWord(fp, 1);
   writeWord(fp, size);
   objectWrite(fp, obj->class);
-  for(i = 0; i < size; i++)
+  for (i = 0; i < size; i++)
   {
     objectWrite(fp, obj->data[i]);
   }
 }
 
-int fileOut(FILE * fp)
+int fileOut(FILE *fp)
 {
-  int             i;
+  int i;
 
   /*
-     use the currently unused space for the indir pointers 
+     use the currently unused space for the indir pointers
    */
-  if(inSpaceOne)
+  if (inSpaceOne)
   {
-    indirArray = (struct object * *) spaceTwo;
+    indirArray = (struct object **)spaceTwo;
   }
   else
   {
-    indirArray = (struct object * *) spaceOne;
+    indirArray = (struct object **)spaceOne;
   }
   indirtop = 0;
 
   /*
-     write out the roots of the image file 
+     write out the roots of the image file
    */
   objectWrite(fp, nilObject);
   objectWrite(fp, trueObject);
@@ -673,7 +661,7 @@ int fileOut(FILE * fp)
   objectWrite(fp, ContextClass);
   objectWrite(fp, StringClass);
   objectWrite(fp, initialMethod);
-  for(i = 0; i < 3; i++)
+  for (i = 0; i < 3; i++)
   {
     objectWrite(fp, binaryMessages[i]);
   }
@@ -681,9 +669,9 @@ int fileOut(FILE * fp)
   printf("%d objects written in image\n", indirtop);
 
   /*
-     clean up after ourselves 
+     clean up after ourselves
    */
-  memoryClear((char *) indirArray, spaceSize * sizeof(struct object));
+  memoryClear((char *)indirArray, spaceSize * sizeof(struct object));
   return indirtop;
 }
 
@@ -698,19 +686,18 @@ int fileOut(FILE * fp)
  */
 void addStaticRoot(struct object **objp)
 {
-  LstUInt         i;
+  LstUInt i;
 
-  for(i = 0; i < staticRootTop; ++i)
+  for (i = 0; i < staticRootTop; ++i)
   {
-    if(objp == staticRoots[i])
+    if (objp == staticRoots[i])
     {
       return;
     }
   }
-  if(staticRootTop >= STATICROOTLIMIT)
+  if (staticRootTop >= STATICROOTLIMIT)
   {
-    sysError("addStaticRoot: too many static references",
-             0);
+    sysError("addStaticRoot: too many static references", 0);
   }
   staticRoots[staticRootTop++] = objp;
 }
@@ -719,20 +706,20 @@ void addStaticRoot(struct object **objp)
  * map()
  *	Fix an OOP if needed, based on values to be exchanged
  */
-static void
-map(struct object **oop, struct object *a1, struct object *a2, int size)
+static void map(struct object **oop, struct object *a1, struct object *a2,
+                int size)
 {
-  int             x;
-  struct object  *oo = *oop;
+  int x;
+  struct object *oo = *oop;
 
-  for(x = 0; x < size; ++x)
+  for (x = 0; x < size; ++x)
   {
-    if(a1->data[x] == oo)
+    if (a1->data[x] == oo)
     {
       *oop = a2->data[x];
       return;
     }
-    if(a2->data[x] == oo)
+    if (a2->data[x] == oo)
     {
       *oop = a1->data[x];
       return;
@@ -744,16 +731,13 @@ map(struct object **oop, struct object *a1, struct object *a2, int size)
  * walk()
  *	Traverse an object space
  */
-static void
-walk(struct object *base, struct object *top,
-     struct object *array1, struct object *array2, LstUInt size)
+static void walk(struct object *base, struct object *top, struct object *array1,
+                 struct object *array2, LstUInt size)
 {
-  struct object  *op,
-                 *opnext;
-  LstUInt         x,
-                  sz;
+  struct object *op, *opnext;
+  LstUInt x, sz;
 
-  for(op = base; op < top; op = opnext)
+  for (op = base; op < top; op = opnext)
   {
     /*
      * Re-map the class pointer, in case that's the
@@ -766,7 +750,7 @@ walk(struct object *base, struct object *top,
      * get rather circular.
      */
     sz = SIZE(op);
-    if((op == array1) || (op == array2))
+    if ((op == array1) || (op == array2))
     {
       opnext = WORDSUP(op, sz + 2);
       continue;
@@ -776,9 +760,9 @@ walk(struct object *base, struct object *top,
      * Don't have to worry about instance variables
      * if it's a binary format.
      */
-    if(op->size & FLAG_BIN)
+    if (op->size & FLAG_BIN)
     {
-      LstUInt         trueSize;
+      LstUInt trueSize;
 
       /*
        * Skip size/class, and enough words to
@@ -793,7 +777,7 @@ walk(struct object *base, struct object *top,
      * For each instance variable slot, fix up the pointer
      * if needed.
      */
-    for(x = 0; x < sz; ++x)
+    for (x = 0; x < sz; ++x)
     {
       map(&op->data[x], array1, array2, size);
     }
@@ -815,10 +799,9 @@ walk(struct object *base, struct object *top,
  * to the object in array2[] similarly become references to the
  * object in array1[].
  */
-void
-exchangeObjects(struct object *array1, struct object *array2, LstUInt size)
+void exchangeObjects(struct object *array1, struct object *array2, LstUInt size)
 {
-  LstUInt         x;
+  LstUInt x;
 
   /*
    * Convert our memory spaces
@@ -829,16 +812,15 @@ exchangeObjects(struct object *array1, struct object *array2, LstUInt size)
   /*
    * Fix up the root pointers, too
    */
-  for(x = 0; x < rootTop; x++)
+  for (x = 0; x < rootTop; x++)
   {
     map(&rootStack[x], array1, array2, size);
   }
-  for(x = 0; x < staticRootTop; x++)
+  for (x = 0; x < staticRootTop; x++)
   {
     map(staticRoots[x], array1, array2, size);
   }
 }
-
 
 struct object *lstNewString(const char *str)
 {
@@ -853,37 +835,36 @@ struct object *lstNewString(const char *str)
   returnObject = (struct object *)stringObject;
   returnObject->class = StringClass;
 
-  for(i = 0; i < l; i++)
-      stringObject->bytes[i] = str[i];
+  for (i = 0; i < l; i++)
+    stringObject->bytes[i] = str[i];
 
   return returnObject;
 }
 
-
 void lstGetString(char *to, int size, struct object *from)
 {
-  int             i;
-  int             fsize = SIZE(from);
-  struct byteObject *bobj = (struct byteObject *) from;
+  int i;
+  int fsize = SIZE(from);
+  struct byteObject *bobj = (struct byteObject *)from;
 
-  if(fsize > size)
+  if (fsize > size)
   {
-	  sysError("error converting text into unix string", (void *)(INT_PTR)fsize);
+    sysError("error converting text into unix string", (void *)(INT_PTR)fsize);
   }
-  for(i = 0; i < fsize; i++)
+  for (i = 0; i < fsize; i++)
   {
     to[i] = bobj->bytes[i];
   }
-  to[i] = '\0';                 /* put null terminator at end */
+  to[i] = '\0'; /* put null terminator at end */
 }
 
 struct object *lstNewBinary(void *p, LstUInt l)
 {
-  struct byteObject *stringObject = (struct byteObject *) gcialloc(l);
+  struct byteObject *stringObject = (struct byteObject *)gcialloc(l);
 
   stringObject->class = StringClass; // TODO should use ByteArrayClass
 
   memcpy(stringObject->bytes, p, l);
 
-  return (struct object *) stringObject;
+  return (struct object *)stringObject;
 }

@@ -3,22 +3,22 @@
  *
  * See Copyright Notice in iup.h
  */
- 
-#ifndef __IUPOLE_H 
+
+#ifndef __IUPOLE_H
 #define __IUPOLE_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-Ihandle *IupOleControl(char *);
-void IupOleControlOpen(void);
+  Ihandle *IupOleControl(char *);
+  void IupOleControlOpen(void);
 
-void *IupOleControl_getclass(void);
+  void *IupOleControl_getclass(void);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-

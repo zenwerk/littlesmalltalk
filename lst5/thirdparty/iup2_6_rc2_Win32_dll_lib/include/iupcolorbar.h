@@ -3,17 +3,18 @@
  *
  * See Copyright Notice in iup.h
  */
- 
-#ifndef __IUPCOLORBAR_H 
+
+#ifndef __IUPCOLORBAR_H
 #define __IUPCOLORBAR_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /** Attribute name for the number of sections */
-#ifndef IUP_NUM_PARTS 
-#define IUP_NUM_PARTS  "NUM_PARTS"
+#ifndef IUP_NUM_PARTS
+#define IUP_NUM_PARTS "NUM_PARTS"
 #endif
 
 /** Attribute name for the number of cells */
@@ -52,28 +53,28 @@ extern "C" {
 #endif
 
 /** Attribute name for setting the widget orientation */
-#ifndef IUP_ORIENTATION 
-#define IUP_ORIENTATION  "ORIENTATION"
+#ifndef IUP_ORIENTATION
+#define IUP_ORIENTATION "ORIENTATION"
 #endif
 
 /** Attribute name for setting the widget squared cell mode */
-#ifndef IUP_SQUARED 
-#define IUP_SQUARED  "SQUARED"
+#ifndef IUP_SQUARED
+#define IUP_SQUARED "SQUARED"
 #endif
 
 /** Attribute name for setting the widget 3D shadowed cell mode */
-#ifndef IUP_SHADOWED 
-#define IUP_SHADOWED  "SHADOWED"
+#ifndef IUP_SHADOWED
+#define IUP_SHADOWED "SHADOWED"
 #endif
 
 /** Attribute name for setting the bufferization flag */
-#ifndef IUP_BUFFERIZE 
-#define IUP_BUFFERIZE  "BUFFERIZE"
+#ifndef IUP_BUFFERIZE
+#define IUP_BUFFERIZE "BUFFERIZE"
 #endif
 
 /** Attribute name for setting the transparency color */
-#ifndef IUP_TRANSPARENCY 
-#define IUP_TRANSPARENCY  "TRANSPARENCY"
+#ifndef IUP_TRANSPARENCY
+#define IUP_TRANSPARENCY "TRANSPARENCY"
 #endif
 
 /** Attribute name for setting the color browser callback */
@@ -96,28 +97,27 @@ extern "C" {
 #define IUP_SWITCH_CB "SWITCH_CB"
 #endif
 
-
 /** Value for the color selection type (primary color).  @see IUP_SELECT_CB */
-#ifndef IUP_PRIMARY   
+#ifndef IUP_PRIMARY
 #define IUP_PRIMARY -1
 #endif
 
 /** Value for the color selection type (secondary color). @see IUP_SELECT_CB */
-#ifndef IUP_SECONDARY   
+#ifndef IUP_SECONDARY
 #define IUP_SECONDARY -2
 #endif
 
 /** Value for the colorbar orientation (vertical). */
-#ifndef IUP_VERTICAL   
-#define IUP_VERTICAL    "VERTICAL"
+#ifndef IUP_VERTICAL
+#define IUP_VERTICAL "VERTICAL"
 #endif
 
-#ifndef IUP_HORIZONTAL 
+#ifndef IUP_HORIZONTAL
 /** Value for the colorbar orientation (horizontal) */
-#define IUP_HORIZONTAL  "HORIZONTAL"
+#define IUP_HORIZONTAL "HORIZONTAL"
 #endif
 
-Ihandle* IupColorbar(void);
+  Ihandle* IupColorbar(void);
 
 #ifdef __cplusplus
 }

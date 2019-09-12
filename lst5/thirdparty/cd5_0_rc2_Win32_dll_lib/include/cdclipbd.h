@@ -8,10 +8,11 @@
 #define __CD_CLIPBOARD_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-cdContext* cdContextClipboard(void);
+  cdContext* cdContextClipboard(void);
 
 #define CD_CLIPBOARD cdContextClipboard()
 

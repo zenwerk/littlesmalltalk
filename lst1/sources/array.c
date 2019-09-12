@@ -28,38 +28,42 @@
 #include <stdio.h>
 #include "lst.h"
 
-class *Array = (class *) 0;
-class *ArrayedCollection = (class *) 0;
+class *Array = (class *)0;
+class *ArrayedCollection = (class *)0;
 
 extern object *o_nil, *o_empty, *o_acollection;
-extern int started;		/* gets set after reading std prelude */
+extern int started; /* gets set after reading std prelude */
 
 /* new_iarray - internal form of new array */
-object *new_iarray(size)
-int size;
-{	object *new;
+object *new_iarray(size) int size;
+{
+  object *new;
 
-	if (size < 0) cant_happen(2);
-	new = new_obj(Array, size, 0);
-	if (! started) {
-		sassign(new->super_obj, o_acollection);
-		}
-	else if (ArrayedCollection)
-		sassign(new->super_obj, new_inst(ArrayedCollection));
-	return(new);
+  if (size < 0)
+    cant_happen(2);
+  new = new_obj(Array, size, 0);
+  if (!started)
+  {
+    sassign(new->super_obj, o_acollection);
+  }
+  else if (ArrayedCollection)
+    sassign(new->super_obj, new_inst(ArrayedCollection));
+  return (new);
 }
 
 /* new_array - create a new array */
-object *new_array(size, initial)
-int size, initial;
-{	int i;
-	object *new;
+object *new_array(size, initial) int size, initial;
+{
+  int i;
+  object *new;
 
-	if (size == 0) return(o_empty);
-	new = new_iarray(size);
-	if (initial) {
-		for (i = 0; i < size; i++)
-			sassign(new->inst_var[ i ], o_nil);
-		}
-	return(new);
+  if (size == 0)
+    return (o_empty);
+  new = new_iarray(size);
+  if (initial)
+  {
+    for (i = 0; i < size; i++)
+      sassign(new->inst_var[i], o_nil);
+  }
+  return (new);
 }

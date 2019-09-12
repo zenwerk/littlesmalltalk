@@ -17,7 +17,7 @@
 template <class T>
 inline T crop_byte(const T& v)
 {
-  return v <= 0? 0: v <= 255? v: 255;
+  return v <= 0 ? 0 : v <= 255 ? v : 255;
 }
 
 /// Generic Addition with 2 template types
@@ -45,7 +45,7 @@ inline T1 mul_op(const T1& v1, const T2& v2)
 template <class T1, class T2>
 inline T1 div_op(const T1& v1, const T2& v2)
 {
-//  if (v2 == 0) return (T1)IM_NEARINF;
+  //  if (v2 == 0) return (T1)IM_NEARINF;
   return v1 / v2;
 }
 
@@ -53,8 +53,8 @@ inline T1 div_op(const T1& v1, const T2& v2)
 template <class T>
 inline T inv_op(const T& v)
 {
-//  if (v == 0) return (T)IM_NEARINF;
-  return 1/v;
+  //  if (v == 0) return (T)IM_NEARINF;
+  return 1 / v;
 }
 
 /// Generic Difference with 2 template types
@@ -111,7 +111,7 @@ template <class T>
 inline T abs_op(const T& v)
 {
   if (v <= 0)
-    return -1*v;
+    return -1 * v;
   return v;
 }
 
@@ -119,14 +119,14 @@ inline T abs_op(const T& v)
 template <class T>
 inline T less_op(const T& v)
 {
-  return -1*v;
+  return -1 * v;
 }
 
 /// Generic Square
 template <class T>
 inline T sqr_op(const T& v)
 {
-  return v*v;
+  return v * v;
 }
 
 inline int sqrt(const int& C)
@@ -162,7 +162,7 @@ inline int log(const int& v)
 template <class T>
 inline T log_op(const T& v)
 {
-//  if (v <= 0) return (T)IM_NEARINF;
+  //  if (v <= 0) return (T)IM_NEARINF;
   return (T)log(v);
 }
 
@@ -206,7 +206,7 @@ inline T cos_op(const T& v)
 inline void imDataBitSet(imbyte* data, int index, int bit)
 {
   if (bit)
-    data[index / 8] |=  (0x01 << (7 - (index % 8)));
+    data[index / 8] |= (0x01 << (7 - (index % 8)));
   else
     data[index / 8] &= ~(0x01 << (7 - (index % 8)));
 }

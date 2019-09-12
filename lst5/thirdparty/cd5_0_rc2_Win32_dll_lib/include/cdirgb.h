@@ -8,20 +8,20 @@
 #define __CD_IRGB_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-cdContext* cdContextImageRGB(void);
-cdContext* cdContextDBufferRGB(void);
+  cdContext* cdContextImageRGB(void);
+  cdContext* cdContextDBufferRGB(void);
 
 #define CD_IMAGERGB cdContextImageRGB()
 #define CD_DBUFFERRGB cdContextDBufferRGB()
 
-unsigned char* cdRedImage(cdCanvas* cnv);
-unsigned char* cdGreenImage(cdCanvas* cnv);
-unsigned char* cdBlueImage(cdCanvas* cnv);
-unsigned char* cdAlphaImage(cdCanvas* cnv);
-
+  unsigned char* cdRedImage(cdCanvas* cnv);
+  unsigned char* cdGreenImage(cdCanvas* cnv);
+  unsigned char* cdBlueImage(cdCanvas* cnv);
+  unsigned char* cdAlphaImage(cdCanvas* cnv);
 
 #ifdef __cplusplus
 }

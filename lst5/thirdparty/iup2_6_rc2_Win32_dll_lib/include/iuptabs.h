@@ -3,12 +3,13 @@
  *
  * See Copyright Notice in iup.h
  */
- 
-#ifndef __IUPTABS_H 
+
+#ifndef __IUPTABS_H
 #define __IUPTABS_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* callbacks */
@@ -26,7 +27,7 @@ extern "C" {
 #define ICTL_LEFT "LEFT"
 #endif
 
-#ifndef ICTL_RIGHT  
+#ifndef ICTL_RIGHT
 #define ICTL_RIGHT "RIGHT"
 #endif
 
@@ -66,11 +67,10 @@ extern "C" {
 #define IUP_BGCOLOR "BGCOLOR"
 #endif
 
+  /* iuptabs */
 
-/* iuptabs */
-
-Ihandle *IupTabsv(Ihandle** params);
-Ihandle *IupTabs(Ihandle* first, ...);
+  Ihandle* IupTabsv(Ihandle** params);
+  Ihandle* IupTabs(Ihandle* first, ...);
 
 #ifdef __cplusplus
 }

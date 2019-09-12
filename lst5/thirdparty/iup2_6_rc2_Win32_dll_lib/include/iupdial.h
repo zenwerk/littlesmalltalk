@@ -3,12 +3,13 @@
  *
  * See Copyright Notice in iup.h
  */
- 
-#ifndef __IUPDIAL_H 
+
+#ifndef __IUPDIAL_H
 #define __IUPDIAL_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* callbacks */
@@ -16,7 +17,7 @@ extern "C" {
 #define ICTL_MOUSEMOVE_CB "MOUSEMOVE_CB"
 #endif
 
-#ifndef ICTL_BUTTON_PRESS_CB 
+#ifndef ICTL_BUTTON_PRESS_CB
 #define ICTL_BUTTON_PRESS_CB "BUTTON_PRESS_CB"
 #endif
 
@@ -53,9 +54,9 @@ extern "C" {
 #define IUP_BGCOLOR "BGCOLOR"
 #endif
 
-/* iupdial */
+  /* iupdial */
 
-Ihandle *IupDial(char *);
+  Ihandle *IupDial(char *);
 
 #ifdef __cplusplus
 }

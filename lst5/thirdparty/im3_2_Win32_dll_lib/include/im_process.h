@@ -8,26 +8,25 @@
 #ifndef __IM_PROCESS_H
 #define __IM_PROCESS_H
 
-#include "im_process_pon.h"
-#include "im_process_loc.h"
-#include "im_process_glo.h"
 #include "im_process_ana.h"
+#include "im_process_glo.h"
+#include "im_process_loc.h"
+#include "im_process_pon.h"
 
-#if	defined(__cplusplus)
-extern "C" {
+#if defined(__cplusplus)
+extern "C"
+{
 #endif
 
-
-/** \defgroup process Image Processing
- * \par
- * Several image processing functions based on the \ref imImage structure.
- * \par
- * You must link the application with "im_process.lib/.a/.so". \n
- * Some complex operations use the \ref counter.\n
- * There is no check on the input/output image properties, 
- * check each function documentation before using it.
- */
-
+  /** \defgroup process Image Processing
+   * \par
+   * Several image processing functions based on the \ref imImage structure.
+   * \par
+   * You must link the application with "im_process.lib/.a/.so". \n
+   * Some complex operations use the \ref counter.\n
+   * There is no check on the input/output image properties,
+   * check each function documentation before using it.
+   */
 
 #if defined(__cplusplus)
 }

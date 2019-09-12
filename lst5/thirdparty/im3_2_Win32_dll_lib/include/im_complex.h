@@ -16,89 +16,88 @@
  * \ingroup util
  */
 
-/** \brief Complex Float Data Type  
- *         
+/** \brief Complex Float Data Type
+ *
  * \par
- * Complex class using two floats, one for real part, one for the imaginary part.
- * \par
- * It is not a complete complex class, we just implement constructors inside the class.
- * All the other operators and functions are external to the class.
- * \ingroup cpx */
+ * Complex class using two floats, one for real part, one for the imaginary
+ * part. \par It is not a complete complex class, we just implement constructors
+ * inside the class. All the other operators and functions are external to the
+ * class. \ingroup cpx */
 class imcfloat
 {
 public:
-	float real;  ///< Real part.
-	float imag;  ///< Imaginary part.
+  float real; ///< Real part.
+  float imag; ///< Imaginary part.
 
   ///	Default Constructor (0,0).
-	imcfloat():real(0), imag(0) {}
+  imcfloat() : real(0), imag(0) {}
 
   ///	Constructor from (real, imag)
-	imcfloat(const float& r, const float& i):real(r),imag(i) {}
+  imcfloat(const float& r, const float& i) : real(r), imag(i) {}
 
   ///	Constructor from (real)
-	imcfloat(const float& r):real(r),imag(0) {}
+  imcfloat(const float& r) : real(r), imag(0) {}
 };
 
 /** \addtogroup cpx
  * Complex numbers operators.
- * @{ 
+ * @{
  */
 
-inline int operator <= (const imcfloat& C1, const imcfloat& C2)
+inline int operator<=(const imcfloat& C1, const imcfloat& C2)
 {
   return ((C1.real <= C2.real) && (C1.imag <= C2.imag));
 }
 
-inline int operator <= (const imcfloat& C, const float& F)
+inline int operator<=(const imcfloat& C, const float& F)
 {
   return ((F <= C.real) && (0 <= C.imag));
 }
 
-inline imcfloat operator + (const imcfloat& C1, const imcfloat& C2)
+inline imcfloat operator+(const imcfloat& C1, const imcfloat& C2)
 {
   return imcfloat(C1.real + C2.real, C1.imag + C2.imag);
 }
 
-inline imcfloat operator += (const imcfloat& C1, const imcfloat& C2)
+inline imcfloat operator+=(const imcfloat& C1, const imcfloat& C2)
 {
   return imcfloat(C1.real + C2.real, C1.imag + C2.imag);
 }
 
-inline imcfloat operator - (const imcfloat& C1, const imcfloat& C2)
+inline imcfloat operator-(const imcfloat& C1, const imcfloat& C2)
 {
   return imcfloat(C1.real - C2.real, C1.imag - C2.imag);
 }
 
-inline imcfloat operator * (const imcfloat& C1, const imcfloat& C2)
+inline imcfloat operator*(const imcfloat& C1, const imcfloat& C2)
 {
-  return imcfloat(C1.real * C2.real - C1.imag * C2.imag, 
-                        C1.imag * C2.real + C1.real * C2.imag);
+  return imcfloat(C1.real * C2.real - C1.imag * C2.imag,
+                  C1.imag * C2.real + C1.real * C2.imag);
 }
 
-inline imcfloat operator / (const imcfloat& C1, const imcfloat& C2)
+inline imcfloat operator/(const imcfloat& C1, const imcfloat& C2)
 {
   float den = C2.real * C2.real - C2.imag * C2.imag;
-  return imcfloat((C1.real * C2.real + C1.imag * C2.imag) / den, 
-                        (C1.imag * C2.real - C1.real * C2.imag) / den);
+  return imcfloat((C1.real * C2.real + C1.imag * C2.imag) / den,
+                  (C1.imag * C2.real - C1.real * C2.imag) / den);
 }
 
-inline imcfloat operator / (const imcfloat& C, const float& R)
+inline imcfloat operator/(const imcfloat& C, const float& R)
 {
   return imcfloat(C.real / R, C.imag / R);
 }
 
-inline imcfloat operator /= (const imcfloat& C, const float& R)
+inline imcfloat operator/=(const imcfloat& C, const float& R)
 {
   return imcfloat(C.real / R, C.imag / R);
 }
 
-inline imcfloat operator * (const imcfloat& C, const float& R)
+inline imcfloat operator*(const imcfloat& C, const float& R)
 {
   return imcfloat(C.real * R, C.imag * R);
 }
 
-inline int operator == (const imcfloat& C1, const imcfloat& C2)
+inline int operator==(const imcfloat& C1, const imcfloat& C2)
 {
   return ((C1.real == C2.real) && (C1.imag == C2.imag));
 }
@@ -115,7 +114,7 @@ inline float cpximag(const imcfloat& C)
 
 inline float cpxmag(const imcfloat& C)
 {
-  return sqrtf(C.real*C.real + C.imag*C.imag);
+  return sqrtf(C.real * C.real + C.imag * C.imag);
 }
 
 inline float cpxphase(const imcfloat& C)
@@ -146,7 +145,7 @@ inline imcfloat pow(const imcfloat& C1, const imcfloat& C2)
 
 inline imcfloat sqrt(const imcfloat& C)
 {
-  float mag = sqrtf(sqrtf(C.real*C.real + C.imag*C.imag));
+  float mag = sqrtf(sqrtf(C.real * C.real + C.imag * C.imag));
   float phase = atan2f(C.real, C.imag) / 2;
   return imcfloat(mag * cosf(phase), mag * sinf(phase));
 }

@@ -8,10 +8,11 @@
 #define __CD_WMF_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-cdContext* cdContextWMF(void);
+  cdContext* cdContextWMF(void);
 
 #define CD_WMF cdContextWMF()
 

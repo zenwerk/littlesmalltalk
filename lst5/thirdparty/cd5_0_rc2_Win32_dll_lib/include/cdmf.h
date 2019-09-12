@@ -8,10 +8,11 @@
 #define __CD_MF_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-cdContext* cdContextMetafile(void);
+  cdContext* cdContextMetafile(void);
 
 #define CD_METAFILE cdContextMetafile()
 
@@ -20,5 +21,3 @@ cdContext* cdContextMetafile(void);
 #endif
 
 #endif /* ifndef __CD_MF_ */
-
-

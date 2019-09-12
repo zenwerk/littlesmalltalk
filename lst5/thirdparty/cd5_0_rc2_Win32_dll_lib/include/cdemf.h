@@ -8,10 +8,11 @@
 #define __CD_EMF_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-cdContext* cdContextEMF(void);
+  cdContext* cdContextEMF(void);
 
 #define CD_EMF cdContextEMF()
 

@@ -8,15 +8,16 @@
 #define __CD_LUAIUP_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-#ifdef LUA_NOOBJECT  /* Lua 3 */
-void cdluaiup_open(void);
+#ifdef LUA_NOOBJECT /* Lua 3 */
+  void cdluaiup_open(void);
 #endif
 
-#ifdef LUA_TNONE  /* Lua 5 */
-int cdluaiup_open(lua_State *L);
+#ifdef LUA_TNONE /* Lua 5 */
+  int cdluaiup_open(lua_State *L);
 #endif
 
 #ifdef __cplusplus
@@ -24,4 +25,3 @@ int cdluaiup_open(lua_State *L);
 #endif
 
 #endif
-
