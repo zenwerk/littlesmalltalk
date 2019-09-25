@@ -23,11 +23,11 @@
 /*     (  )  [  ]  .      |   ^|   ;    ^       #  -     > */
 
 %{
-# include <stdlib.h>
-# include <string.h>
-# include "env.h"
-# include "drive.h"
-# include "parser.h"
+#include <stdlib.h>
+#include <string.h>
+#include "env.h"
+#include "drive.h"
+#include "parser.h"
 %}
 
 %union {
@@ -45,7 +45,7 @@
     struct statestruct   *s;
     struct litstruct     *t;
     struct primstruct    *u;
-    }
+}
 
 %{
 extern struct blockstruct  *mkblock();
@@ -102,10 +102,10 @@ file         : classdef
              | file classdef
              ;
 
-classdef     : classheading lb methodlist RB {if (errorcount == 0) genclass($1, $3);}
+classdef     : classheading lb methodlist ']' {if (errorcount == 0) genclass($1, $3);}
              ;
 
-lb           : LB
+lb           : '['
              | error   {
                  if ((yytext[0] == ':') || isalpha(yytext[0])) expect(":SuperClass");
                  else expect("open brace [");
@@ -115,7 +115,7 @@ lb           : LB
 classheading : class super instancevars {$$ = $2;}
              ;
 
-class        : CLASS
+class        : 'Class'
              | error {expect("keyword Class");}
              ;
 
@@ -126,7 +126,7 @@ super        : classname           {$$ = mkclass($1, (char *) 0);}
              ;
 
 classname    : UPPERCASEVAR
-             | CLASS
+             | 'Class'
              ;
 
 instancevars : /* empty */
@@ -139,7 +139,7 @@ instvarlist  : LOWERCASEVAR             {addinst($1);}
              ;
 
 methodlist   : method
-             | methodlist MBAR method {$3->nextmethod = $1; $$ = $3;}
+             | methodlist '^|' method {$3->nextmethod = $1; $$ = $3;}
              ;
 
 method       : pattern tempvars statelist op {deltemps($2); $$ = mkmethod($1, $2, $3);}
@@ -180,8 +180,8 @@ tempvars     : /* empty */      {$$ = 0;}
              | bar namelist bar {$$ = $2;}
              ;
 
-bar          : BAR
-             | MBAR
+bar          : '|'
+             | '^|'
              | error {expect("| (vertical bar)");}
              ;
 
@@ -191,51 +191,68 @@ namelist     : tvariable          {$$ = 1;}
 
 tvariable    : LOWERCASEVAR {addtemp($1, tempvar);}
              ;
-
-statelist    : statement                  {$$ = $1;}
-             | statelist PERIOD statement {$3->nextstate = $1; $$ = $3;}
+ 
+/* 複文 */
+statelist    : statement               {$$ = $1;}
+             | statelist '.' statement {$3->nextstate = $1; $$ = $3;}
              ;
 
 op           : /* empty - optional period */
-             | PERIOD
+             | '.'
              ;
 
-statement    : UPARROW sexpression {$$ = mkstate(upar, (char *) 0, $2);}
+/* 文 = ^式の開始 or 式の開始 */
+statement    : '^' sexpression {
+                 $$ = mkstate(upar, (char *) 0, $2);
+               }
              | sexpression
              ;
 
-sexpression  : LOWERCASEVAR ASSIGN sexpression {$$ = mkstate(asgn, $1, $3);}
+/* 式の開始 = 代入式 or C式 */
+sexpression  : LOWERCASEVAR ':=' sexpression {
+                 $$ = mkstate(asgn, $1, $3);
+               }
              | cexpression {
                  $$ = mkstate(expr, (char *) 0, (struct statestruct *) $1);
                }
              ;
 
+/* 単項` > `2項` > `キーワード` の優先順位なので
+   キーワード, 二項, 単項 の順にパースする */
+
+/* C式 = 単式 or Keywordメッセージ */
 cexpression  : expression
              | kcontinuation {$$ = mkexpr($1, semiend, 0, 0);}
              ;
 
+/* Keywordメッセ = 二項メッセージ or 二項メッセ+キーワード */
 kcontinuation: bcontinuation
              | bcontinuation keywordlist {$$ = mkkey($1, $2);}
              ;
 
+/* 二項メッセ = 単項メッセ or 二項メッセ+二項シンボル+単項 */
 bcontinuation: ucontinuation
              | bcontinuation binarysym unary {$$ = mkexpr($1, bincmd, $2, $3);}
              ;
 
-ucontinuation: cexpression SEMI {$$ = mkexpr($1, semistart, 0, 0);}
+/* 単項メッセ = C式';' or 単項メッセ+変数 */
+ucontinuation: cexpression ';' {$$ = mkexpr($1, semistart, 0, 0);} /* さらなるメッセージへ */
              | ucontinuation LOWERCASEVAR {
                  $$ = mkexpr($1, uncmd, $2, (struct exprstruct *) 0);
                }
              ;
 
+/* 単式 = 二項 or 二項+キーワードリスト */
 expression   : binary             {$$ = $1;}
              | binary keywordlist {$$ = mkkey($1, $2);}
              ;
 
+/* hoge: fuga hoge: piyo */
 keywordlist  : KEYWORD binary             {$$ = mkklist((struct keylist *) 0, $1, $2);}
              | keywordlist KEYWORD binary {$$ = mkklist($1, $2, $3);}
              ;
 
+/* 二項 = 単項 or 二項+二項シンボル+単項 */
 binary       : unary                  {$$ = $1;}
              | binary binarysym unary {$$ = mkexpr($1, bincmd, $2, $3);}
              ;
@@ -245,12 +262,14 @@ binarysym    : binarychar            {$$ = $1;}
              ;
 
 binarychar   : BINARY
-             | BAR
-             | MINUS
-             | UPARROW
-             | PE
+             | '|'
+             | '!'
+             | '-'
+             | '^'
+             | '>'
              ;
 
+/* 単項 */
 unary        : primary {
                    $$ = mkexpr((struct exprstruct *) 0, reccmd, (char *) 0, (struct exprstruct *) $1);
                }
@@ -259,45 +278,59 @@ unary        : primary {
                }
              ;
 
-primary      : classname         {e.c = $1; $$ = mkobj(classobj, &e);}
-             | LOWERCASEVAR      {e.c = $1; $$ = mkobj(varobj, &e);}
-             | literal           {e.t = $1; $$ = mkobj(litobj, &e);}
-             | PSEUDO            {e.p = $1; $$ = mkobj(pseuobj, &e);}
-             | primitive         {e.u = $1; $$ = mkobj(primobj, &e);}
-             | LP sexpression RP {e.s = $2; $$ = mkobj(exprobj, &e);}
-             | block             {e.b = $1; $$ = mkobj(blockobj, &e);}
+/* プライマリ(Smalltalk世界でのプリミティブ) */
+primary      : classname           {e.c = $1; $$ = mkobj(classobj, &e);}
+             | LOWERCASEVAR        {e.c = $1; $$ = mkobj(varobj, &e);}
+             | literal             {e.t = $1; $$ = mkobj(litobj, &e);}
+             | PSEUDO              {e.p = $1; $$ = mkobj(pseuobj, &e);}
+             | primitive           {e.u = $1; $$ = mkobj(primobj, &e);}
+             | '(' sexpression ')' {e.s = $2; $$ = mkobj(exprobj, &e);}
+             | block               {e.b = $1; $$ = mkobj(blockobj, &e);}
              ;
 
-primitive    : PRIMITIVE LITNUM objlist PE {$$ = mkprim($2, $3);}
-             | NAMEDPRIM objlist PE        {$$ = mkprim($1, $2);}
+/* プリミティブ(C言語機能呼び出し) */
+primitive    : PRIMITIVE LITNUM objlist '>' {$$ = mkprim($2, $3);}
+             | NAMEDPRIM objlist '>'        {$$ = mkprim($1, $2);}
              ;
 
+/* プライマリのリスト */
 objlist      : /* empty */     {$$ = (struct primlist *) 0;}
              | objlist primary {$$ = addprim($1, $2);}
              ;
 
-block        : LB barglist opmessagelist RB {
+/* ブロック */
+block        : '[' barglist opmessagelist ']' {
                     $$ = mkblock($2, $3);
                     deltemps($2);
                }
              ;
 
+/* ブロックの引数リスト */
 barglist     : /* empty */  {$$ = 0;}
-             | cvarlist BAR {$$ = $1;}
+             | cvarlist '|' {$$ = $1;}
              ;
 
+/* コロン変数のリスト */
 cvarlist     : COLONVAR          {addtemp($1, argvar); $$ = 1;}
              | cvarlist COLONVAR {addtemp($2, argvar); $$ = $1 + 1;}
              ;
 
+/* メッセージリスト */
 opmessagelist: bstatelist bstatement {$2->nextstate = $1; $$ = $2;}
              | bstatement            {$$ = $1;}
              ;
 
-bstatement   : UPARROW sexpression {$$ = mkstate(blkupar, (char *) 0, $2);}
-             | bexpression         {$$ = mkstate(upar, (char *) 0, $1);}
+/* ブロック内の文のリスト */
+bstatelist   : sexpression '.'            {$$ = $1;}
+             | bstatelist sexpression '.' {$2->nextstate = $1; $$ = $2;}
              ;
 
+/* ブロック内の文 = '^'+式の開始 or ブロック内式 */
+bstatement   : '^' sexpression {$$ = mkstate(blkupar, (char *) 0, $2);}
+             | bexpression     {$$ = mkstate(upar, (char *) 0, $1);}
+             ;
+
+/* ブロック内の式 = 空 or 式の開始 */
 bexpression  : /* empty */ {
                      e.p = nilvar;
                      $$ = mkstate(expr, (char *) 0, (struct statestruct *) mkexpr((struct exprstruct *) 0, reccmd, (char *) 0, (struct exprstruct *) mkobj(pseuobj, &e)));
@@ -305,15 +338,9 @@ bexpression  : /* empty */ {
              | sexpression {$$ = $1;}
              ;
 
-bstatelist   : sexpression PERIOD            {$$ = $1;}
-             | bstatelist sexpression PERIOD {$2->nextstate = $1; $$ = $2;}
-             ;
-
-literal      : iliteral              {$$ = $1;}
-             | alitstart litarray RP {e.a = $2; $$ = mklit(arlit, &e);}
-             ;
-
-alitstart    : PS LP
+/* リテラル */
+literal      : iliteral               {$$ = $1;}
+             | '#(' litarray ')' {e.a = $2; $$ = mklit(arlit, &e);}
              ;
 
 iliteral     : fliteral           {e.c = $1; $$ = mklit(fnumlit, &e);}
@@ -321,29 +348,29 @@ iliteral     : fliteral           {e.c = $1; $$ = mklit(fnumlit, &e);}
              | LITCHAR            {e.i = $1; $$ = mklit(charlit, &e);}
              | LITSTR             {e.c = $1; $$ = mklit(strlit, &e);}
              | LITSYM             {e.c = $1; $$ = mklit(symlit, &e);}
-             | PS LB bytearray RB {bytearray[bytetop] = '\0'; $$ = mklit(bytelit, &e);}
+             | '#[' bytearray ']' {bytearray[bytetop] = '\0'; $$ = mklit(bytelit, &e);}
              ;
 
-fliteral     : LITFNUM       {$$ = $1;}
-             | MINUS LITFNUM {$$ = bincat("-", $2);}
+fliteral     : LITFNUM     {$$ = $1;}
+             | '-' LITFNUM {$$ = bincat("-", $2);}
              ;
 
-nliteral     : LITNUM       {$$ = $1;}
-             | MINUS LITNUM {$$ = - $2;}
+nliteral     : LITNUM     {$$ = $1;}
+             | '-' LITNUM {$$ = - $2;}
              ;
 
-aliteral     : iliteral        {$$ = $1;}
-             | LOWERCASEVAR    {e.c = $1; $$ = mklit(symlit, &e);}
-             | UPPERCASEVAR    {e.c = $1; $$ = mklit(symlit, &e);}
-             | KEYWORD         {e.c = $1; $$ = mklit(symlit, &e);}
-             | COLONVAR        {e.c = $1; $$ = mklit(symlit, &e);}
-             | CLASS           {e.c = $1; $$ = mklit(symlit, &e);}
-             | binarysym       {e.c = $1; $$ = mklit(symlit, &e);}
-             | ias litarray RP {e.a = $2; $$ = mklit(arlit, &e);}
+aliteral     : iliteral         {$$ = $1;}
+             | LOWERCASEVAR     {e.c = $1; $$ = mklit(symlit, &e);}
+             | UPPERCASEVAR     {e.c = $1; $$ = mklit(symlit, &e);}
+             | KEYWORD          {e.c = $1; $$ = mklit(symlit, &e);}
+             | COLONVAR         {e.c = $1; $$ = mklit(symlit, &e);}
+             | CLASS            {e.c = $1; $$ = mklit(symlit, &e);}
+             | binarysym        {e.c = $1; $$ = mklit(symlit, &e);}
+             | ias litarray ')' {e.a = $2; $$ = mklit(arlit, &e);}
              ;
 
-ias          : PS LP
-             | LP
+ias          : '#('
+             | '(' 
              ;
 
 litarray     : /* empty */       {$$ = (struct litlist *) 0;}
